@@ -15,6 +15,10 @@ so nothing in this file really has anything to do with GPT specifically.
 
 import math
 import logging
+import os
+import copy
+
+import json 
 
 from tqdm import tqdm
 import numpy as np
@@ -26,13 +30,15 @@ from torch.utils.data.dataloader import DataLoader
 
 logger = logging.getLogger(__name__)
 
-from mingpt.utils import sample
+from mingpt.utils import sample, StatePreprocessor
 import atari_py
 from collections import deque
 import random
 import cv2
 import torch
 from PIL import Image
+
+from mingpt.key_door import curriculum_env, posner_env, visualisation_env
 
 class TrainerConfig:
     # optimization parameters
