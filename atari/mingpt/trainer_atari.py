@@ -103,11 +103,12 @@ class Trainer:
 
         logger.info(f"Using device: {self.device}")
 
-    def save_checkpoint(self):
+    def save_checkpoint(self, epoch):
         # DataParallel wrappers keep raw model object in .module attribute
-        raw_model = self.model.module if hasattr(self.model, "module") else self.model
+        raw_model = copy.deepcopy(self.model.module) if hasattr(self.model, "module") else copy.deepcopy(self.model)
+        raw_model = raw_model.to("cpu")
         logger.info("saving %s", self.config.ckpt_path)
-        # torch.save(raw_model.state_dict(), self.config.ckpt_path)
+        torch.save(raw_model.state_dict(), os.path.join(self.config.ckpt_path, str(epoch)))
 
     def train(self):
         model, config = self.model, self.config
