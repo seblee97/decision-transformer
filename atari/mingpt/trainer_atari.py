@@ -55,6 +55,7 @@ class TrainerConfig:
     # checkpoint settings
     ckpt_path = None
     num_workers = 0 # for DataLoader
+    kd_env_path = None
 
     def __init__(self, **kwargs):
         for k,v in kwargs.items():
