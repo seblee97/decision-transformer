@@ -186,9 +186,9 @@ class Trainer:
 
             # # supports early stopping based on the test loss, or just save always if no test set is provided
             # good_model = self.test_dataset is None or test_loss < best_loss
-            # if self.config.ckpt_path is not None and good_model:
-            #     best_loss = test_loss
-            #     self.save_checkpoint()
+            if self.config.ckpt_path is not None:
+                # best_loss = test_loss
+                self.save_checkpoint(epoch)
 
             # -- pass in target returns
             if self.config.model_type == 'naive':
@@ -202,10 +202,69 @@ class Trainer:
                     eval_return = self.get_returns(14000)
                 elif self.config.game == 'Pong':
                     eval_return = self.get_returns(20)
+                elif self.config.game == 'KeyDoorEnv':
+                    eval_return = self.get_kd_returns(3)
                 else:
                     raise NotImplementedError()
+            elif self.config.model_type == 'train_only':
+                pass
             else:
                 raise NotImplementedError()
+
+    def get_kd_returns(self, ret):
+
+        self.model.train(False)
+
+        T_rewards, T_Qs = [], []
+        done = True
+        for i in range(10):
+            state = self._env.reset_environment(train=False)
+
+            state = self._preprocessor.preprocess(state)
+
+            state = state.type(torch.float32).to(self.device).unsqueeze(0).unsqueeze(0)
+            rtgs = [ret]
+            # first state is from env, first rtg is target return, and first timestep is 0
+
+            sampled_action = sample(self.model.module, state, 1, temperature=1.0, sample=True, actions=None, 
+                rtgs=torch.tensor(rtgs, dtype=torch.long).to(self.device).unsqueeze(0).unsqueeze(-1), 
+                timesteps=torch.zeros((1, 1, 1), dtype=torch.int64).to(self.device))
+
+            j = 0
+            all_states = state
+            actions = []
+            while True:
+                if done:
+                    state, reward_sum, done = self._env.reset_environment(train=False), 0, False
+                action = sampled_action.cpu().numpy()[0,-1]
+                actions += [sampled_action]
+                reward, state = self._env.step(action)
+                done = not self._env.active
+                reward_sum += reward
+                j += 1
+
+                if done:
+                    T_rewards.append(reward_sum)
+                    break
+
+                state = self._preprocessor.preprocess(state)
+
+                state = state.unsqueeze(0).unsqueeze(0).to(self.device)
+
+                all_states = torch.cat([all_states, state], dim=0)
+
+                rtgs += [rtgs[-1] - reward]
+                # all_states has all previous states and rtgs has all previous rtgs (will be cut to block_size in utils.sample)
+                # timestep is just current timestep
+                sampled_action = sample(self.model.module, all_states.unsqueeze(0), 1, temperature=1.0, sample=True, 
+                    actions=torch.tensor(actions, dtype=torch.long).to(self.device).unsqueeze(1).unsqueeze(0), 
+                    rtgs=torch.tensor(rtgs, dtype=torch.long).to(self.device).unsqueeze(0).unsqueeze(-1), 
+                    timesteps=(min(j, self.config.max_timestep) * torch.ones((1, 1, 1), dtype=torch.int64).to(self.device)))
+        self._env.close()
+        eval_return = sum(T_rewards)/10.
+        print("target return: %d, eval return: %d" % (ret, eval_return))
+        self.model.train(True)
+        return eval_return
 
     def get_returns(self, ret):
         self.model.train(False)
@@ -267,7 +326,7 @@ class Env():
         self.ale.setFloat('repeat_action_probability', 0)  # Disable sticky actions
         self.ale.setInt('frame_skip', 0)
         self.ale.setBool('color_averaging', False)
-        self.ale.loadROM(atari_py.get_game_path(args.game))  # ROM loading must be done after setting options
+        self.ale.loadROM(atari_py.get_game_path(args.game.lower()))  # ROM loading must be done after setting options
         actions = self.ale.getMinimalActionSet()
         self.actions = dict([i, e] for i, e in zip(range(len(actions)), actions))
         self.lives = 0  # Life counter (used in DeepMind training)
