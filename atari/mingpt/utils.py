@@ -14,6 +14,9 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+from PIL import Image
+import collections
+
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -60,3 +63,75 @@ def sample(model, x, steps, temperature=1.0, sample=False, top_k=None, actions=N
         x = ix
 
     return x
+
+
+def resize(shape):
+    """Resizes array to the given shape."""
+    if len(shape) != 2:
+        raise ValueError("Resize shape has to be 2D, given: %s." % str(shape))
+    # Image.resize takes (width, height) as output_shape argument.
+    image_shape = (shape[1], shape[0])
+
+    def resize_fn(array):
+        if len(array.shape) == 3:
+            pil_image = Image.fromarray((array * 255).astype(np.uint8), "RGB")
+        else:
+            pil_image = Image.fromarray(array)
+        image = pil_image.resize(image_shape, Image.BILINEAR)
+        image = np.array(image)
+        return image
+
+    return resize_fn
+
+
+class Deque:
+    """Double ended queue with a maximum length and initial values."""
+
+    def __init__(self, max_length: int, initial_values=None):
+        self._deque = collections.deque(maxlen=max_length)
+        self._initial_values = initial_values or []
+
+    def reset(self) -> None:
+        self._deque.clear()
+        self._deque.extend(self._initial_values)
+
+    def __call__(self, value) -> collections.deque:
+        self._deque.append(value)
+        return self._deque
+
+
+def trailing_zero_pad(length: int):
+    """Adds trailing zero padding to array lists to ensure a minimum length."""
+
+    def trailing_zero_pad_fn(arrays):
+        padding_length = length - len(arrays)
+        if padding_length <= 0:
+            return arrays
+        zero = np.zeros_like(arrays[0])
+        return arrays + [zero] * padding_length
+
+    return trailing_zero_pad_fn
+
+
+class StatePreprocessor:
+    """Preprocesses state observations for training."""
+    
+    def __init__(self, env_shape=(84, 84), num_stacked_frames=4):
+        # preprocessor functions (taken from dqn_zoo to match)
+        # could be optimized, but would prefer to keep code consistent with dqn_zoo
+        self._resize_fn = resize(shape=env_shape)
+        self._deque_fn = Deque(max_length=num_stacked_frames)
+        self._trailing_zeros = trailing_zero_pad(length=num_stacked_frames)
+
+    def preprocess(self, state):
+        """
+        Preprocesses a single state observation.
+        """
+        rgb_state = 255 * np.tensordot(state, [0.299, 0.587, 1 - (0.299 + 0.587)], (-1, 0))
+        state = self._resize_fn(rgb_state)
+        state = self._deque_fn(state)
+        state = list(state)
+        state = self._trailing_zeros(state)
+        state = torch.from_numpy(np.stack(state, axis=-1))
+
+        return state
