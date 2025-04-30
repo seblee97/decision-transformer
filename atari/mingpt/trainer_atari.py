@@ -74,6 +74,34 @@ class Trainer:
         if torch.cuda.is_available():
             self.device = torch.cuda.current_device()
             self.model = torch.nn.DataParallel(self.model).to(self.device)
+            logger.info("Found GPU")
+        else:
+            self.model = torch.nn.DataParallel(self.model).to(self.device)
+            logger.info("GPU not found")
+
+        if self.config.game == 'KeyDoorEnv':
+
+            with open(os.path.join(self.config.kd_env_path, 'flags.json')) as json_file:
+                kd_env_config = json.load(json_file)
+
+            self._preprocessor = StatePreprocessor(
+                env_shape=(kd_env_config["environment_height"], kd_env_config["environment_width"]),
+                num_stacked_frames=kd_env_config["num_stacked_frames"]
+            )
+
+            self._env = posner_env.PosnerEnv(
+                map_ascii_path=os.path.join(self.config.kd_env_path, kd_env_config["map_ascii_path"].split("/")[-1]),
+                map_yaml_path=os.path.join(self.config.kd_env_path, kd_env_config["map_yaml_path"].split("/")[-1]),
+                representation="pixel",
+                episode_timeout=kd_env_config["max_frames_per_episode"],
+                scaling=kd_env_config["env_scaling"],
+                grayscale=False,
+                batch_dimension=False,
+                torch_axes=False
+            )
+            self._env = visualisation_env.VisualisationEnv(self._env)
+
+        logger.info(f"Using device: {self.device}")
 
     def save_checkpoint(self):
         # DataParallel wrappers keep raw model object in .module attribute
