@@ -203,7 +203,7 @@ class Trainer:
                 elif self.config.game == 'Pong':
                     eval_return = self.get_returns(20)
                 elif self.config.game == 'KeyDoorEnv':
-                    eval_return = self.get_kd_returns(3)
+                    eval_return = self.get_kd_returns(3, epoch)
                 else:
                     raise NotImplementedError()
             elif self.config.model_type == 'train_only':
@@ -211,7 +211,7 @@ class Trainer:
             else:
                 raise NotImplementedError()
 
-    def get_kd_returns(self, ret):
+    def get_kd_returns(self, ret, epoch):
 
         self.model.train(False)
 
@@ -235,6 +235,14 @@ class Trainer:
             actions = []
             while True:
                 if done:
+                    self._env.visualise_episode_history(
+                        os.path.join(
+                            self.config.ckpt_path,
+                            "rollouts",
+                            f"test_episode_{epoch}_{i}.mp4",
+                        ),
+                        history="test",
+                    )
                     state, reward_sum, done = self._env.reset_environment(train=False), 0, False
                 action = sampled_action.cpu().numpy()[0,-1]
                 actions += [sampled_action]
