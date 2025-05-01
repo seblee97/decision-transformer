@@ -235,14 +235,6 @@ class Trainer:
             actions = []
             while True:
                 if done:
-                    self._env.visualise_episode_history(
-                        os.path.join(
-                            self.config.ckpt_path,
-                            "rollouts",
-                            f"test_episode_{epoch}_{i}.mp4",
-                        ),
-                        history="test",
-                    )
                     state, reward_sum, done = self._env.reset_environment(train=False), 0, False
                 action = sampled_action.cpu().numpy()[0,-1]
                 actions += [sampled_action]
@@ -252,6 +244,14 @@ class Trainer:
                 j += 1
 
                 if done:
+                    self._env.visualise_episode_history(
+                        os.path.join(
+                            self.config.ckpt_path,
+                            "rollouts",
+                            f"test_episode_{epoch}_{i}.mp4",
+                        ),
+                        history="test",
+                    )
                     T_rewards.append(reward_sum)
                     break
 
