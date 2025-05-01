@@ -27,6 +27,7 @@ raw_datetime = datetime.datetime.fromtimestamp(time.time())
 exp_timestamp = raw_datetime.strftime("%Y-%m-%d-%H-%M-%S")
 exp_path = os.path.join("results", exp_timestamp)
 os.makedirs(exp_path, exist_ok=True)
+os.makedirs(os.path.join(exp_path, "rollouts"), exist_ok=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=123)
