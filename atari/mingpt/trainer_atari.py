@@ -17,6 +17,7 @@ import math
 import logging
 import os
 import copy
+import pandas as pd
 
 import json 
 
@@ -69,6 +70,8 @@ class Trainer:
         self.test_dataset = test_dataset
         self.config = config
 
+        self._log = {"train_loss": [], "test_return": []}
+
         # take over whatever gpus are on the system
         self.device = 'cpu'
         if torch.cuda.is_available():
@@ -109,6 +112,18 @@ class Trainer:
         raw_model = raw_model.to("cpu")
         logger.info("saving %s", self.config.ckpt_path)
         torch.save(raw_model.state_dict(), os.path.join(self.config.ckpt_path, str(epoch)))
+
+    def save_log(self):
+        # Define the CSV file path
+        log_file_path = os.path.join(self.config.ckpt_path, "training_log.csv")
+
+        # Save the log to a CSV file
+        try:
+            log_df = pd.DataFrame(self._log)
+            log_df.to_csv(log_file_path, index=False)
+            logger.info(f"Log saved to {log_file_path}")
+        except Exception as e:
+            logger.error(f"Failed to save log: {e}")
 
     def train(self):
         model, config = self.model, self.config
@@ -166,6 +181,7 @@ class Trainer:
 
                     # report progress
                     pbar.set_description(f"epoch {epoch+1} iter {it}: train loss {loss.item():.5f}. lr {lr:e}")
+                    self._log["train_loss"].append(loss.item())
 
             if not is_train:
                 test_loss = float(np.mean(losses))
@@ -268,9 +284,9 @@ class Trainer:
                     actions=torch.tensor(actions, dtype=torch.long).to(self.device).unsqueeze(1).unsqueeze(0), 
                     rtgs=torch.tensor(rtgs, dtype=torch.long).to(self.device).unsqueeze(0).unsqueeze(-1), 
                     timesteps=(min(j, self.config.max_timestep) * torch.ones((1, 1, 1), dtype=torch.int64).to(self.device)))
-        self._env.close()
         eval_return = sum(T_rewards)/10.
         print("target return: %d, eval return: %d" % (ret, eval_return))
+        self._log["test_return"].append(eval_return)
         self.model.train(True)
         return eval_return
 

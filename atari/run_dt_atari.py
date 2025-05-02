@@ -106,3 +106,4 @@ tconf = TrainerConfig(max_epochs=epochs, batch_size=args.batch_size, learning_ra
 trainer = Trainer(model, train_dataset, None, tconf)
 
 trainer.train()
+trainer.save_log()
