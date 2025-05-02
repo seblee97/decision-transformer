@@ -1,0 +1,4 @@
+*__pycache__
+atari/results/
+atari/slurm*.out
+dataset/
