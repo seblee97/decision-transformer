@@ -17,7 +17,6 @@ import math
 import logging
 import os
 import copy
-import pandas as pd
 
 import json 
 
@@ -114,16 +113,8 @@ class Trainer:
         torch.save(raw_model.state_dict(), os.path.join(self.config.ckpt_path, str(epoch)))
 
     def save_log(self):
-        # Define the CSV file path
-        log_file_path = os.path.join(self.config.ckpt_path, "training_log.csv")
-
-        # Save the log to a CSV file
-        try:
-            log_df = pd.DataFrame(self._log)
-            log_df.to_csv(log_file_path, index=False)
-            logger.info(f"Log saved to {log_file_path}")
-        except Exception as e:
-            logger.error(f"Failed to save log: {e}")
+        log_file_path = os.path.join(self.config.ckpt_path, "training_log.npy")
+        np.save(log_file_path, self._log)
 
     def train(self):
         model, config = self.model, self.config
