@@ -30,7 +30,7 @@ from torch.utils.data.dataloader import DataLoader
 
 logger = logging.getLogger(__name__)
 
-from mingpt.utils import sample, StatePreprocessor
+from mingpt.utils import sample, StatePreprocessor, render_frame
 import atari_py
 from collections import deque
 import random
