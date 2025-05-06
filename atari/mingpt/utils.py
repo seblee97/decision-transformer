@@ -14,6 +14,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+import matplotlib.pyplot as plt
+
 from PIL import Image
 import collections
 
@@ -135,3 +137,8 @@ class StatePreprocessor:
         state = torch.from_numpy(np.stack(state, axis=-1))
 
         return state
+
+def render_frame(x, save_path):
+    fig = plt.figure()
+    plt.imshow(x)
+    fig.savefig(save_path, dpi=20)
