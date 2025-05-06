@@ -328,6 +328,7 @@ class Trainer:
         env.close()
         eval_return = sum(T_rewards)/10.
         print("target return: %d, eval return: %d" % (ret, eval_return))
+        self._log["test_return"].append(eval_return)
         self.model.train(True)
         return eval_return
 
