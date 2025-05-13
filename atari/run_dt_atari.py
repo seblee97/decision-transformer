@@ -93,8 +93,8 @@ mconf = GPTConfig(train_dataset.vocab_size, train_dataset.block_size,
 model = GPT(mconf)
 
 # initialize a trainer instance and kick off training
-if args.game == 'KeyDoorEnv':
-    kd_env_path = os.path.join(args.data_dir_prefix, 'KeyDoorEnv', 'kd_env_config')
+if 'KeyDoorEnv' in args.game:
+    kd_env_path = os.path.join(args.data_dir_prefix, args.game, 'kd_env_config')
 else:
     kd_env_path = None
 
