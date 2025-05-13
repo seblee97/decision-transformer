@@ -27,7 +27,10 @@ def create_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_p
     done_idxs = []
     stepwise_returns = []
 
-    transitions_per_buffer = np.zeros(50, dtype=int)
+    if "KeyDoor" in game: # hack on hack 
+        transitions_per_buffer = np.zeros(196, dtype=int)
+    else:
+        transitions_per_buffer = np.zeros(50, dtype=int)
     num_trajectories = 0
     while len(obss) < num_steps:
         if "KeyDoor" in game: # hack on hack 
