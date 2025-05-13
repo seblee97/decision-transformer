@@ -81,7 +81,7 @@ class Trainer:
             self.model = torch.nn.DataParallel(self.model).to(self.device)
             logger.info("GPU not found")
 
-        if self.config.game == 'KeyDoorEnv':
+        if 'KeyDoorEnv' in self.config.game:
 
             with open(os.path.join(self.config.kd_env_path, 'flags.json')) as json_file:
                 kd_env_config = json.load(json_file)
@@ -209,7 +209,7 @@ class Trainer:
                     eval_return = self.get_returns(14000)
                 elif self.config.game == 'Pong':
                     eval_return = self.get_returns(20)
-                elif self.config.game == 'KeyDoorEnv':
+                elif 'KeyDoorEnv' in self.config.game:
                     eval_return = self.get_kd_returns(3, epoch)
                 else:
                     raise NotImplementedError()
