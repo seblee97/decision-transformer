@@ -30,7 +30,10 @@ def create_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_p
     transitions_per_buffer = np.zeros(50, dtype=int)
     num_trajectories = 0
     while len(obss) < num_steps:
-        buffer_num = np.random.choice(np.arange(50 - num_buffers, 50), 1)[0]
+        if "KeyDoor" in game: # hack on hack 
+            buffer_num = np.random.choice(np.arange(196 - num_buffers, 196), 1)[0]
+        else:
+            buffer_num = np.random.choice(np.arange(50 - num_buffers, 50), 1)[0] # this kind of hard coding is frustratingly horrific, oh well hacks on hacks I guess.
         i = transitions_per_buffer[buffer_num]
         print('loading from buffer %d which has %d already loaded' % (buffer_num, i))
         frb = FixedReplayBuffer(
