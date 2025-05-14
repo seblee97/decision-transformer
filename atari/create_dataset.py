@@ -27,21 +27,19 @@ def create_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_p
     done_idxs = []
     stepwise_returns = []
 
-    if "KeyDoor" in game: # hack on hack 
-        transitions_per_buffer = np.zeros(196, dtype=int)
-    else:
-        transitions_per_buffer = np.zeros(50, dtype=int)
+    transitions_per_buffer = np.zeros(50, dtype=int)
     num_trajectories = 0
     while len(obss) < num_steps:
-        if "KeyDoor" in game: # hack on hack 
-            buffer_num = np.random.choice(np.arange(196 - num_buffers, 196), 1)[0]
-        else:
-            buffer_num = np.random.choice(np.arange(50 - num_buffers, 50), 1)[0] # this kind of hard coding is frustratingly horrific, oh well hacks on hacks I guess.
+        buffer_num = np.random.choice(np.arange(50 - num_buffers, 50), 1)[0] # this kind of hard coding is frustratingly horrific, oh well hacks on hacks I guess.
         i = transitions_per_buffer[buffer_num]
         print('loading from buffer %d which has %d already loaded' % (buffer_num, i))
+        if "KeyDoor" in game:
+            replay_suffix = 140 + buffer_num
+        else:
+            replay_suffix = buffer_num
         frb = FixedReplayBuffer(
             data_dir=data_dir_prefix + game + '/1/replay_logs',
-            replay_suffix=buffer_num,
+            replay_suffix=replay_suffix,
             observation_shape=(84, 84),
             stack_size=4,
             update_horizon=1,
