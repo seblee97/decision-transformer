@@ -2,3 +2,6 @@
 atari/results/
 atari/slurm*.out
 dataset/
+*.mp4
+*.ipynb_checkpoints/
+*.pdf
